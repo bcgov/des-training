@@ -5,7 +5,7 @@ import { searchPlugin } from "@vuepress/plugin-search";
 
 
 export default defineUserConfig({
-  base: "/des-training",
+  base: "/des-training/",
   lang: "en-US",
   title: "DES Training",
   description: "DES Training site for Containers, Kubernetes, WordPress, Javascript, PHP, and Python",
