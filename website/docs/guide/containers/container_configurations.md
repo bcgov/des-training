@@ -32,7 +32,7 @@ This runs a docker container with:
 
 Going to [127.0.0.1:30001](http://127.0.0.1:30001) should serve an Nginx web server.
 
-![nginx screenshot](/des-training/images/nginx-docker-run.png)
+![nginx screenshot](../../../public/../docs/.vuepress/public/images/nginx-docker-run.png)
 
 ## Reasons for Changing configurations.
 Environment variables, and mounting configurations files allow an image to be more versatile for different deployment configurations.
