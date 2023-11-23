@@ -1,0 +1,8 @@
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+metadata:
+  name: nginx
+  annotations:
+    description: Nginx Image stream with templates for NGINX_PORT and NGINX_HOST
+  labels:
+    name: nginx-image

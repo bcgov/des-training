@@ -1,0 +1,1 @@
+import{_ as t,o as s,c as a,a as e,b as n}from"./app-ut450u4y.js";const o={},c=e("h1",{id:"openshift-guides",tabindex:"-1"},[e("a",{class:"header-anchor",href:"#openshift-guides","aria-hidden":"true"},"#"),n(" OpenShift Guides")],-1),i=[c];function d(r,_){return s(),a("div",null,i)}const f=t(o,[["render",d],["__file","index.html.vue"]]);export{f as default};
