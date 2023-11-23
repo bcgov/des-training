@@ -10,4 +10,3 @@ In order to deploy this simple Nginx example to kubernetes we have to create a d
  - to view the status of this deployment run `kubectl get pods`, if successful the status should indicate running.
  - Unlike docker you can't access this pod directly, so you have to port-forward.
 
-@[code yaml](../../.vuepress/public/code/2023/11/simple-deployment.yaml)
