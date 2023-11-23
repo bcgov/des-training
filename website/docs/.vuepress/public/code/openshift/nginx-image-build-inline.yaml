@@ -1,0 +1,36 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: nginx-build-inline-config
+  annotations:
+    description: This builds the nginx image from inline dockerfile.
+strategy:
+  dockerStrategy:
+    forcePull: true
+spec:
+  successfulBuildsHistoryLimit: 2
+  failedBuildsHistoryLimit: 2
+  runPolicy: Serial
+  source:
+    dockerfile: |-
+      # Dockerfile.sed - used to create an Nginx image with new port defined by $PORT
+      ARG CODE_VERSION=latest
+      FROM nginx:${CODE_VERSION}
+      # Using sed to change port 80 to ${PORT} as port 80 is a privileged port.
+      RUN ["/bin/bash", "-c", "sed -i 's/80/38081/g' /etc/nginx/conf.d/default.conf"]
+      # Fix up permissions
+      RUN chmod -Rf 0777 /tmp /var /run /etc /mnt || :
+      # Switch to usermode
+      USER 104
+  strategy:
+    type: Docker
+    dockerStrategy:
+      buildArgs:
+      - name: CODE_VERSION
+        value:  1.25.3
+      - name: PORT
+        value: 38081
+  output:
+    to:
+      kind: ImageStreamTag
+      name: nginx:port38081

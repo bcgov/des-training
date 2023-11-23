@@ -1,0 +1,33 @@
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: nginx-build-source-config
+  annotations:
+    description: This builds the nginx image from GIT source.
+strategy:
+  dockerStrategy:
+    forcePull: true
+spec:
+  successfulBuildsHistoryLimit: 2
+  failedBuildsHistoryLimit: 2
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      ref: main
+      uri: https://github.com/bcgov/des-training.git
+    contextDir: docker/nginx
+  strategy:
+    type: Docker
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: nginx:1.23.3-alpine
+      dockerfilePath: Dockerfile.template
+      buildArgs:
+      - name: CODE_VERSION
+        value:  1.24.0
+  output:
+    to:
+      kind: ImageStreamTag
+      name: nginx:from-source

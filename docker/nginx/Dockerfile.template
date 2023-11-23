@@ -1,0 +1,9 @@
+# Dockerfile.template - used to create an Nginx image with templates.
+ARG CODE_VERSION=latest
+FROM nginx:${CODE_VERSION}
+# As of Nginx 1.19 you can use templates
+COPY ./default.conf.template /etc/nginx/templates/
+# Fix up permissions
+RUN chmod -Rf 0777 /tmp /var /run /etc /mnt || :
+# Switch to usermode
+USER 104
