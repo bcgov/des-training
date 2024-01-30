@@ -1,7 +1,7 @@
 import { defaultTheme } from "@vuepress/theme-default";
 
 import { defineUserConfig } from "vuepress";
-import { searchPlugin } from "@vuepress/plugin-search";
+
 
 
 export default defineUserConfig({
@@ -30,8 +30,6 @@ export default defineUserConfig({
     ],
   }),
   plugins: [
-    searchPlugin({
-      // options
-    }),
+    
   ],
 });
