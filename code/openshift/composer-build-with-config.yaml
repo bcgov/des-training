@@ -1,0 +1,72 @@
+
+# The config map which will contain the composer.json file for the s2i build.
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: des-training-composer-file
+  annotations:
+    description: Training, Configmap that stores a composer.json file, used for building an image.
+data:
+  composer.json: |
+    {
+      "name": "bcgov/sample-composer-project",
+      "type": "project",
+      "license": "MIT",
+      "require": {
+          "monolog/monolog": "3.5.0"
+      },
+      "config": {
+        "php": "8.3"
+      }
+    }
+---
+# Image stream
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+metadata:
+  name: des-training-composer
+  annotations:
+    description: Training, Image that has the composer install on a composer.json from buildConfig
+---
+# The Build config to run composer.json defined in config map
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: des-training-composer-build
+  labels:
+    name: training
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'des-training-composer:latest'
+  resources:
+    limits:
+      cpu: '0.4'
+      memory: 400Mi
+    
+  successfulBuildsHistoryLimit: 1
+  failedBuildsHistoryLimit: 1
+  completionDeadlineSeconds: 1800
+  strategy:
+    type: Docker
+  source:
+    type: Dockerfile
+    dockerfile: |-
+      FROM composer-source AS composer
+      WORKDIR /var/www/html
+      # Because there is a dockerfile and not using github for s2i, it uses the configmap for composer.json
+      COPY composer.json /var/www/html
+      RUN composer install
+    images:
+      - from:
+          kind: DockerImage
+          name: 'composer:lts'
+        as:
+          - composer-source
+    configMaps:
+      - configMap:
+          name: des-training-composer-file
+      # - configMap:
+      #     name: some-other-config-map
+  runPolicy: Parallel
