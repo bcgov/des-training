@@ -3,6 +3,7 @@
   vars:
     php74: shivammathur/php/php@7.4
     homebrew_installed_packages:
+      - wget
       - curl
       - node
       - nvm
@@ -16,7 +17,6 @@
       - visual-studio-code
       - rancher
       - postman
-      - rocket-chat
       - adobe-acrobat-reader
 
     vscode_extensions:
