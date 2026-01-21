@@ -1,0 +1,159 @@
+- name: Installing developer dependencies
+  hosts: localhost
+  vars:
+    php74: shivammathur/php/php@7.4
+    homebrew_installed_packages:
+      - curl
+      - node
+      - nvm
+      - php
+      - "{{ php74 }}"
+      - openshift-cli
+      - composer
+      - mysql
+
+    homebrew_installed_cask_packages:
+      - visual-studio-code
+      - rancher
+      - postman
+      - rocket-chat
+      - adobe-acrobat-reader
+
+    vscode_extensions:
+      - streetsidesoftware.code-spell-checker
+      - ms-vsliveshare.vsliveshare
+      - neilbrayfield.php-docblocker
+      - rangav.vscode-thunder-client
+      - yzhang.markdown-all-in-one
+      - dionmunk.vscode-notes
+      - ms-vscode-remote.remote-containers
+      - SonarSource.sonarlint-vscode
+
+      
+    homebrew_clear_cache: false
+    bcgov_script_banner: "### BcGov Ansible Script For Development"
+    homebrew_bin_path: '/opt/homebrew/bin'
+    nvm_repo: nvm-sh/nvm
+    home: "{{ ansible_env.HOME }}"
+    nvm_dir: "{{ home }}/.nvm"
+    # Simplifying to only include the .zshrc, all other shells are not supported
+    shell_profile_script: ~/.zshrc
+    visual_studio_code_extensions_build: stable
+    ssl_path_wordpress: ~/ssl/wordpress
+  pre_tasks:
+      - name: Check .zshrc exists
+        stat:
+          path: "{{shell_profile_script}}"
+        register: stat_zshrc_file
+        # Create the .zshrc file
+      - name: "Creating .zshrc"
+        command: touch ~/.zshrc
+        when: not stat_zshrc_file.stat.exists
+      
+  tasks:
+    # Update Homebrew
+    - name: Force update brew after installation
+      command: "{{ homebrew_bin_path }}/brew update --force"
+
+    # Checking Homebrew packages
+    - name: Ensure configured homebrew packages are installed
+      homebrew:
+        name: "{{ item.name | default(item) }}"
+        install_options: "{{ item.install_options | default(omit) }}"
+        state: "{{ item.state | default('present') }}"
+      loop: "{{ homebrew_installed_packages }}"
+      ignore_errors: true
+      notify:
+        - Clear homebrew cache
+    # Checking Homebrew cask packages
+    - name: Installing main packages using brew casks
+      homebrew_cask:
+        name: "{{ item.name | default(item) }}"
+        install_options: "{{ item.install_options | default(omit) }}"
+        state: "{{ item.state | default('present') }}"
+      loop: "{{ homebrew_installed_cask_packages }}"
+      ignore_errors: true
+      notify:
+        - Clear homebrew cache
+
+    # VSCode Extensions
+    - name: "Adding vs code extensions {{vscode_extensions}}"
+      loop: "{{ vscode_extensions }}"
+      shell: "code --install-extension {{ item.name | default(item) }}"
+
+     
+    # Adding items to profile scripts.
+    - name: Adding marker ({{ bcgov_script_banner }}) for shell profile
+      lineinfile: 
+        line: "{{ bcgov_script_banner }}"
+        path: "{{ shell_profile_script }}"
+        insertafter: EOF
+        regexp: .*BcGov\ Ansible.*
+        state: present
+    # Adding brew bin path
+    - name: Adding brew bin to path in shell profiles
+      lineinfile:
+        path: "{{ shell_profile_script }}"
+        line: "export PATH=$PATH:{{homebrew_bin_path}}"
+        insertafter: "^{{ bcgov_script_banner }}"
+        regexp: ^export PATH=\$PATH.*$
+        state: present
+    # Adding NVM export variable
+    - name: Set NVM_DIR export variable in shell profile
+      lineinfile:
+        path: "{{ shell_profile_script }}"
+        line: 'export NVM_DIR="$HOME/.nvm"'
+        regexp: "^export NVM_DIR=.*nvm"
+        insertafter: "^{{ bcgov_script_banner }}"
+        state: present
+    
+
+    # Adding nvm source
+    - name: set source nvm.sh in shell profile
+      lineinfile:
+        path: "{{ shell_profile_script }}"
+        line: '[ -s "$({{ homebrew_bin_path }}/brew --prefix nvm)/nvm.sh" ] &&  . "$({{ homebrew_bin_path }}/brew --prefix nvm)/nvm.sh"'
+        insertafter: EOF
+        regexp: ^\[.*\/brew\ --prefix\ nvm\)\/nvm.sh
+        state: present
+  
+    # Adding NVM bash completion
+    - name: Source bash_completion in shell profiles
+      lineinfile:
+        path: "{{ shell_profile_script }}"
+        line: '[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"'
+        insertafter: EOF
+        regexp: ^\[.*NVM_DIR/bash_completion
+        state: present
+    
+    # Adding DESCW WordPress bin commands
+    - name: Adding WordPress bin commands (Once installed, ensure path is correct)
+      lineinfile:
+        path: "{{ shell_profile_script }}"
+        line: '[ -s "$HOME/Development/repos/github/wordpress/dev/bin/commands.sh" ] && . "$HOME/Development/repos/github/wordpress/dev/bin/commands.sh"'
+        insertafter: EOF
+        regexp: ^\[.*/wordpress/dev/bin/commands.sh
+        state: present
+
+    # php linking 7.4
+    - name: "Verifying using PHP 7.4"
+      shell: php --version | grep '7.4'
+      ignore_errors: yes
+      register: php_version_74
+    - name: "Unlinking php > 8 "
+      command: "{{ homebrew_bin_path }}/brew unlink php"
+      when: php_version_74.stdout == ""
+    - name: "Linking php to {{ php74 }}"
+      command: "{{ homebrew_bin_path }}/brew link {{ php74 }}"
+      when: php_version_74.stdout == ""
+
+
+  # handlers for ansible-role-homebrew
+  handlers:
+    - name: Clear homebrew cache
+      file:
+        path: "{{ homebrew_cache_path.stdout | trim }}"
+        state: absent
+      when: 'homebrew_clear_cache | bool'
+      become: "{{ (homebrew_user != ansible_user_id) | bool }}"
+      become_user: "{{ homebrew_user }}"
